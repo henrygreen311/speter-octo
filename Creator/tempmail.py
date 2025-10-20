@@ -5,10 +5,13 @@ tempmail.py — Minimal Mail.tm client, auto-extracts 6-digit verification codes
 Commands:
   python3 tempmail.py new           # prints: email\npassword
   python3 tempmail.py list          # prints saved accounts as email\npassword\n...
-  python3 tempmail.py inbox <email> # prints only the verification code (XXX XXX) if found,
-                                    # otherwise prints the message body.
+  python3 tempmail.py inbox <email> # prints only the verification code (XXX XXX) if found
+                                    # from a message received less than 1 minute ago,
+                                    # otherwise prints nothing (or the message body
+                                    # if you change the threshold).
 """
 import os, json, urllib.request, urllib.error, uuid, re
+from datetime import datetime, timezone
 
 BASE = "https://api.mail.tm"
 ACCOUNTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tempmail_accounts.json")
@@ -88,7 +91,30 @@ def _extract_code_from_text(text):
                 return f"{digits[:3]} {digits[3:]}"
     return None
 
-def inbox(address):
+def _parse_created_at(ts):
+    """
+    Parse ISO8601-like timestamp returned by mail.tm into a timezone-aware datetime.
+    Handles '2025-10-20T12:34:56.789Z' and '2025-10-20T12:34:56+00:00' forms.
+    """
+    if not ts:
+        return None
+    try:
+        # Normalize 'Z' to '+00:00' for fromisoformat
+        if ts.endswith("Z"):
+            ts = ts[:-1] + "+00:00"
+        return datetime.fromisoformat(ts)
+    except Exception:
+        # Fallback: try common format without fractional seconds
+        try:
+            return datetime.strptime(ts, "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+        except Exception:
+            return None
+
+def inbox(address, max_age_seconds=60):
+    """
+    Show the latest message for `address` only if it was received within `max_age_seconds`.
+    Default max_age_seconds is 60 (1 minute).
+    """
     accounts = load_accounts()
     if address not in accounts:
         print("❌ Email not found.")
@@ -104,11 +130,31 @@ def inbox(address):
     mails = messages.get("hydra:member", [])
 
     if not mails:
-        print("")  # print nothing (or could print a message). Keeping output minimal.
+        print("")  # keep output minimal
         return
 
-    # mail.tm returns newest first; take the first
-    latest = mails[0]
+    # Filter mails by createdAt within the last `max_age_seconds`.
+    now = datetime.now(timezone.utc)
+    recent_mails = []
+    for m in mails:
+        created_at = _parse_created_at(m.get("createdAt") or m.get("created_at") or "")
+        if created_at is None:
+            continue
+        # Ensure timezone-aware
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        age = (now - created_at).total_seconds()
+        if age <= max_age_seconds and age >= 0:
+            recent_mails.append((age, m))
+
+    if not recent_mails:
+        # No recent mail within window — print nothing to avoid logging old OTPs.
+        print("")
+        return
+
+    # pick the newest (smallest age)
+    recent_mails.sort(key=lambda x: x[0])
+    latest = recent_mails[0][1]
     msg_id = latest["id"]
     content = req(f"{BASE}/messages/{msg_id}", headers=headers)
     body = content.get("text") or content.get("html") or ""
@@ -132,6 +178,9 @@ def main():
         new_email()
     elif cmd == "list":
         list_emails()
+    elif cmd == "inbox" and len(sys.argv) == 2:
+        # default behavior: use configured 60s threshold
+        print("❗ Usage: python3 tempmail.py inbox <email>")  # keep explicit usage
     elif cmd == "inbox" and len(sys.argv) == 3:
         inbox(sys.argv[2])
     else:
