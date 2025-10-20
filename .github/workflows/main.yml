@@ -3,7 +3,7 @@ name: tester
 # Run on schedule (every hour) or manually
 on:
   schedule:
-    - cron: '0 */1 * * *'   # Every 2 hours
+    - cron: '0 */2 * * *'   # Every 2 hours
   workflow_dispatch:       # Manual trigger
 
 jobs:
@@ -48,8 +48,8 @@ jobs:
       # Step 7: Make Python scripts executable
       - name: Make Python scripts executable
         run: |
-          chmod +x tempmail.py
-          chmod +x img.py
+          chmod +x Creator/tempmail.py
+          chmod +x Creator/img.py
 
       # Step 8: Run runner.js inside Xvfb
       - name: Run runner.js with Xvfb
@@ -61,7 +61,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add tempmail_accounts.json
+          git add Creator/tempmail_accounts.json
           git diff --quiet || git commit -m "Update tempmail_accounts.json [ci skip]"
           git push
         env:
