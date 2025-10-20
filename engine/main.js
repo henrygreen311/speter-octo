@@ -186,83 +186,107 @@ try {
   return;
 }
 
-    // --- Human-like clicking behavior ---
-    try {
-      console.log('Locating main container: <div class="harmony-1iqhatc"> ...');
-      const container = await page.$('div.harmony-1iqhatc');
-      if (!container) {
-        console.log('Container not found.');
-      } else {
-        const repeatCount = 3;
-        for (let round = 1; round <= repeatCount; round++) {
-          console.log(`\n=== Starting interaction round ${round}/${repeatCount} ===`);
-          let listItems = await page.$$('div.harmony-1iqhatc ol li');
-          console.log(`Found ${listItems.length} <li> elements inside the target container.`);
+   // --- Human-like clicking behavior ---  
+try {  
+  console.log('Locating main container: <div class="harmony-1iqhatc"> ...');  
+  const container = await page.$('div.harmony-1iqhatc');  
+  if (!container) {  
+    console.log('Container not found.');  
+  } else {  
+    const repeatCount = 3;  
+    for (let round = 1; round <= repeatCount; round++) {  
+      console.log(`\n=== Starting interaction round ${round}/${repeatCount} ===`);  
+      let listItems = await page.$$('div.harmony-1iqhatc ol li');  
+      console.log(`Found ${listItems.length} <li> elements inside the target container.`);  
 
-          if (listItems.length === 0) continue;
+      if (listItems.length === 0) continue;  
 
-          for (let i = 0; i < listItems.length; i++) {
-            try {
-              listItems = await page.$$('div.harmony-1iqhatc ol li');
-              if (i >= listItems.length) break;
+      for (let i = 0; i < listItems.length; i++) {  
+        try {  
+          listItems = await page.$$('div.harmony-1iqhatc ol li');  
+          if (i >= listItems.length) break;  
 
-              const li = listItems[i];
-              await li.scrollIntoViewIfNeeded();
-              console.log(`Scrolled to item ${i + 1}/${listItems.length} (Round ${round})`);
-              await page.waitForTimeout(Math.floor(Math.random() * 2000) + 1000);
+          const li = listItems[i];  
+          await li.scrollIntoViewIfNeeded();  
+          console.log(`Scrolled to item ${i + 1}/${listItems.length} (Round ${round})`);  
+          await page.waitForTimeout(Math.floor(Math.random() * 2000) + 1000);  
 
-              const box = await li.boundingBox();
-              if (box) {
-                const x = box.x + box.width / 2 + (Math.random() * 10 - 5);
-                const y = box.y + box.height / 2 + (Math.random() * 10 - 5);
-                await page.mouse.move(x, y, { steps: 10 });
-              }
+          const box = await li.boundingBox();  
+          if (box) {  
+            const x = box.x + box.width / 2 + (Math.random() * 10 - 5);  
+            const y = box.y + box.height / 2 + (Math.random() * 10 - 5);  
+            await page.mouse.move(x, y, { steps: 10 });  
+          }  
 
-              const circle = await li.$('svg circle#Oval');
-              if (circle) {
-                console.log(`Clicking circle in item ${i + 1}`);
-                await circle.click({ delay: Math.floor(Math.random() * 200) + 50 });
-              } else {
-                console.log(`Circle not found in item ${i + 1}, skipping.`);
-              }
+          // --- Circle click sequence ---  
+          const circle = await li.$('svg circle#Oval');  
+          if (circle) {  
+            console.log(`Clicking circle in item ${i + 1}`);  
+            await circle.click({ delay: Math.floor(Math.random() * 200) + 50 });  
 
-              const popup = await page.$('div[role="dialog"], div.modal, div.popup');
-              if (popup) {
-                console.log('Popup detected, attempting to close...');
-                try {
-                  await page.keyboard.press('Escape');
-                  await popup.evaluate(el => el.remove());
-                  console.log('Popup closed/removed.');
-                } catch (err) {
-                  console.log('Error closing popup:', err.message);
-                }
-              }
+            // --- NEW: Favorite (Heart) check & click ---  
+            try {  
+              const heartDiv = await li.$('div._heartWrapper_1nr0t_44');  
+              if (heartDiv) {  
+                const ariaLabel = await heartDiv.getAttribute('aria-label');  
+                if (ariaLabel === 'Favorite') {  
+                  console.log(`Heart button found (Favorite) in item ${i + 1}, clicking...`);  
+                  await heartDiv.click({ delay: Math.floor(Math.random() * 200) + 50 });  
+                } else if (ariaLabel === 'Unfavorite') {  
+                  console.log(`Heart button in item ${i + 1} is already "Unfavorite", skipping click.`);  
+                } else {  
+                  console.log(`Heart button found in item ${i + 1} but aria-label is unexpected: ${ariaLabel}`);  
+                }  
+              } else {  
+                console.log(`No heart button found in item ${i + 1}.`);  
+              }  
+            } catch (heartError) {  
+              console.error(`Error handling heart button in item ${i + 1}: ${heartError.message}`);  
+            }  
+            // --- END heart click logic ---  
 
-              const waitTime = Math.floor(Math.random() * 15000) + 5000;
-              console.log(`Waiting ${waitTime / 1000}s before next interaction...`);
-              await page.waitForTimeout(waitTime);
-            } catch (innerError) {
-              console.error(`Error on item ${i + 1} (Round ${round}): ${innerError.message}`);
-            }
-          }
+          } else {  
+            console.log(`Circle not found in item ${i + 1}, skipping.`);  
+          }  
 
-          console.log(`=== Completed round ${round}/${repeatCount} ===`);
-          if (round < repeatCount) {
-            const delay = Math.floor(Math.random() * 20000) + 10000;
-            console.log(`Waiting ${delay / 1000}s before restarting...`);
-            await page.waitForTimeout(delay);
-          }
-        }
-        console.log('\nAll interaction rounds completed successfully.');
-      }
-    } catch (error) {
-      console.error('Error during human-like clicking sequence:', error.message);
-    }
+          // --- Popup closing section ---  
+          const popup = await page.$('div[role="dialog"], div.modal, div.popup');  
+          if (popup) {  
+            console.log('Popup detected, attempting to close...');  
+            try {  
+              await page.keyboard.press('Escape');  
+              await popup.evaluate(el => el.remove());  
+              console.log('Popup closed/removed.');  
+            } catch (err) {  
+              console.log('Error closing popup:', err.message);  
+            }  
+          }  
 
-    await page.waitForTimeout(10000);
-    await browser.close();
-  } catch (globalError) {
-    console.error('Fatal error in script:', globalError.message);
-    await browser.close();
-  }
+          const waitTime = Math.floor(Math.random() * 15000) + 5000;  
+          console.log(`Waiting ${waitTime / 1000}s before next interaction...`);  
+          await page.waitForTimeout(waitTime);  
+        } catch (innerError) {  
+          console.error(`Error on item ${i + 1} (Round ${round}): ${innerError.message}`);  
+        }  
+      }  
+
+      console.log(`=== Completed round ${round}/${repeatCount} ===`);  
+      if (round < repeatCount) {  
+        const delay = Math.floor(Math.random() * 20000) + 10000;  
+        console.log(`Waiting ${delay / 1000}s before restarting...`);  
+        await page.waitForTimeout(delay);  
+      }  
+    }  
+    console.log('\nAll interaction rounds completed successfully.');  
+  }  
+} catch (error) {  
+  console.error('Error during human-like clicking sequence:', error.message);  
+}  
+
+await page.waitForTimeout(10000);  
+await browser.close();  
+} catch (globalError) {  
+console.error('Fatal error in script:', globalError.message);  
+await browser.close();  
+}  
 })();
