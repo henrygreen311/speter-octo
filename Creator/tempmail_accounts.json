@@ -318,5 +318,10 @@
   "77dbb85b@tiffincrane.com": {
     "address": "77dbb85b@tiffincrane.com",
     "password": "6d4bd8d6-68d5-4d8e-8e5a-d82b673497e6"
+  },
+  "2f8d610a@tiffincrane.com": {
+    "address": "2f8d610a@tiffincrane.com",
+    "password": "838a266c-c670-4f61-a651-b74322ec732b",
+    "register": "yes"
   }
 }
