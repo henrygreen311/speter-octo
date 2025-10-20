@@ -1,10 +1,9 @@
 name: tester
 
-# Run on schedule (every hour) or manually
 on:
   schedule:
     - cron: '0 */2 * * *'   # Every 2 hours
-  workflow_dispatch:       # Manual trigger
+  workflow_dispatch:         # Manual trigger
 
 jobs:
   run-scripts:
@@ -15,8 +14,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Install Xvfb
-      - name: Install Xvfb
+      # Step 2: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb
@@ -27,41 +26,40 @@ jobs:
         with:
           node-version: '20'
 
-      # Step 4: Install Node.js dependencies
-      - name: Install Node.js dependencies
-        run: |
-          npm install playwright
-          npx playwright install firefox
-
-      # Step 5: Setup Python
+      # Step 4: Install Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      # Step 6: Install Python tools
-      - name: Install Python requests
+      # Step 5: Move into Creator directory and install dependencies
+      - name: Install project dependencies
+        working-directory: Creator
         run: |
+          npm install playwright
+          npx playwright install firefox
           python -m pip install --upgrade pip
           python -m pip install requests
 
-      # Step 7: Make Python scripts executable
+      # Step 6: Make Python scripts executable
       - name: Make Python scripts executable
+        working-directory: Creator
         run: |
-          chmod +x Creator/tempmail.py
-          chmod +x Creator/img.py
+          chmod +x tempmail.py img.py
 
-      # Step 8: Run runner.js inside Xvfb
+      # Step 7: Run runner.js inside Xvfb
       - name: Run runner.js with Xvfb
+        working-directory: Creator
         run: |
-          xvfb-run -a node Creator/runner.js
+          xvfb-run -a node runner.js
 
-      # Step 9: Commit and push updated tempmail_accounts.json
+      # Step 8: Commit and push updated tempmail_accounts.json
       - name: Commit and push updates
+        working-directory: Creator
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add Creator/tempmail_accounts.json
+          git add tempmail_accounts.json
           git diff --quiet || git commit -m "Update tempmail_accounts.json [ci skip]"
           git push
         env:
