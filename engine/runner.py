@@ -1,32 +1,60 @@
 import subprocess
+import sys
 import time
 
-# Number of runs
-total_runs = 6
+# Configuration
+total_runs = 20
+log_file = "run_log.txt"
 
-for i in range(1, total_runs + 1):
-    print(f"\n🔄 Running iteration {i}...")
+# Keywords that indicate a failed run, even if exit code == 0
+failure_indicators = [
+    "Timeout waiting for feed page",
+    "Error",
+    "Failed",
+    "Exception",
+    "Traceback"
+]
 
-    try:
-        # Execute main.js using Node.js
-        result = subprocess.run(
+def contains_failure(text: str) -> bool:
+    return any(keyword.lower() in text.lower() for keyword in failure_indicators)
+
+with open(log_file, "w", encoding="utf-8") as log:
+    for i in range(1, total_runs + 1):
+        header = f"\n--- Running iteration {i} ---\n"
+        print(header, flush=True)
+        log.write(header)
+
+        # Capture stdout + stderr
+        process = subprocess.Popen(
             ["node", "main.js"],
-            check=True,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True
         )
-        print(f"✅ Run {i} completed successfully.")
-        print(result.stdout)
 
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️ Run {i} failed. Skipping to next...")
-        print(f"Error Output:\n{e.stderr.strip()}")
+        stdout, stderr = process.communicate()
+        combined_output = stdout + "\n" + stderr
 
-    except Exception as e:
-        print(f"❌ Unexpected error in run {i}: {e}")
-        continue
+        # Stream output to console and log file
+        sys.stdout.write(stdout)
+        sys.stderr.write(stderr)
+        log.write(combined_output)
+        log.flush()
 
-    # Optional: add a short delay between runs (e.g., 1 second)
-    time.sleep(1)
+        # Detect failure conditions
+        failed = process.returncode != 0 or contains_failure(combined_output)
 
-print("\n🏁 All runs completed.")
+        if failed:
+            msg = f"Run {i} detected an error or timeout â skipping to next.\n"
+        else:
+            msg = f"Run {i} completed successfully.\n"
+
+        print(msg, flush=True)
+        log.write(msg)
+        log.flush()
+
+        time.sleep(1)
+
+    footer = "\nAll runs completed.\n"
+    print(footer, flush=True)
+    log.write(footer)
