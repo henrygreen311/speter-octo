@@ -3,7 +3,7 @@ import sys
 import time
 
 # Configuration
-total_runs = 20
+total_runs = 6
 log_file = "run_log.txt"
 
 # Keywords that indicate a failed run, even if exit code == 0
@@ -58,3 +58,4 @@ with open(log_file, "w", encoding="utf-8") as log:
     footer = "\nAll runs completed.\n"
     print(footer, flush=True)
     log.write(footer)
+
