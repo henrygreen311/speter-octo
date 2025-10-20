@@ -2,7 +2,7 @@ import subprocess
 import time
 
 # Number of runs
-total_runs = 20
+total_runs = 1
 
 for i in range(1, total_runs + 1):
     print(f"\n🔄 Running iteration {i}...")
@@ -28,5 +28,6 @@ for i in range(1, total_runs + 1):
 
     # Optional: add a short delay between runs (e.g., 1 second)
     time.sleep(1)
+
 
 print("\n🏁 All runs completed.")
