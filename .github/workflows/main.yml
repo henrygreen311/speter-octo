@@ -78,7 +78,7 @@ jobs:
       - name: Run Engine runner.py with Xvfb
         working-directory: engine
         run: |
-          xvfb-run -a python3 runner.py
+          xvfb-run -a node main.js
 
       # Step 11: Commit and push updated tempmail.json
       - name: Commit and push updates from Engine
