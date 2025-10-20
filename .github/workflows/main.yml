@@ -1,0 +1,68 @@
+name: tester
+
+# Run on schedule (every hour) or manually
+on:
+  schedule:
+    - cron: '0 */1 * * *'   # Every 2 hours
+  workflow_dispatch:       # Manual trigger
+
+jobs:
+  run-scripts:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install Xvfb
+      - name: Install Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      # Step 3: Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Step 4: Install Node.js dependencies
+      - name: Install Node.js dependencies
+        run: |
+          npm install playwright
+          npx playwright install firefox
+
+      # Step 5: Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # Step 6: Install Python tools
+      - name: Install Python requests
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install requests
+
+      # Step 7: Make Python scripts executable
+      - name: Make Python scripts executable
+        run: |
+          chmod +x tempmail.py
+          chmod +x img.py
+
+      # Step 8: Run runner.js inside Xvfb
+      - name: Run runner.js with Xvfb
+        run: |
+          xvfb-run -a node Creator/runner.js
+
+      # Step 9: Commit and push updated tempmail_accounts.json
+      - name: Commit and push updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add tempmail_accounts.json
+          git diff --quiet || git commit -m "Update tempmail_accounts.json [ci skip]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
