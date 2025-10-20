@@ -100,4 +100,4 @@ jobs:
           git diff --quiet || git commit -m "Update tempmail.json [ci skip]"
           git push
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
