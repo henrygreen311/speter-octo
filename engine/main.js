@@ -137,16 +137,27 @@ const execPromise = util.promisify(exec);
     await page.click('//*[@id="root"]/div[1]/div/div[1]/form/div[3]/button');
 
     try {
-      await page.waitForURL('https://audius.co/feed', { waitUntil: 'load', timeout: 120000 });
+      await page.waitForURL('https://audius.co/feed', { waitUntil: 'load', timeout: 60000 });
     } catch (error) {
-      console.error('Warning: Timeout waiting for feed page:', error.message);
-      const currentUrl = page.url();
-      if (!currentUrl.includes('https://audius.co/feed')) {
-        console.error('Failed to reach feed page, current URL:', currentUrl);
-        await browser.close();
-        return;
-      }
+  console.error('Warning: Timeout waiting for feed page:', error.message);
+  const currentUrl = page.url();
+
+  if (!currentUrl.includes('https://audius.co/feed')) {
+    console.error('Failed to reach feed page, current URL:', currentUrl);
+
+    // === NEW: Take a screenshot before closing ===
+    try {
+      const screenshotPath = path.join(__dirname, `feed_error_${Date.now()}.png`);
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      console.log(`📸 Screenshot captured at: ${screenshotPath}`);
+    } catch (screenshotError) {
+      console.error('Error capturing screenshot:', screenshotError.message);
     }
+
+    await browser.close();
+    return;
+  }
+}
 
     let targetUrl;
     try {
