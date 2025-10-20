@@ -1,34 +1,47 @@
 import subprocess
 import time
+import sys
 
-# Number of runs
-total_runs = 3
+# Configurations
+total_runs = 6
+log_file = "run_log.txt"
 
-for i in range(1, total_runs + 1):
-    print(f"\n🔄 Running iteration {i}...")
+# Open log file for both read & write
+with open(log_file, "w", encoding="utf-8") as log:
+    for i in range(1, total_runs + 1):
+        header = f"\nð Running iteration {i}...\n"
+        print(header, flush=True)
+        log.write(header)
 
-    try:
-        # Execute main.js using Node.js
-        result = subprocess.run(
+        # Run node script with live output
+        process = subprocess.Popen(
             ["node", "main.js"],
-            check=True,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True
         )
-        print(f"✅ Run {i} completed successfully.")
-        print(result.stdout)
 
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️ Run {i} failed. Skipping to next...")
-        print(f"Error Output:\n{e.stderr.strip()}")
+        # Stream stdout and stderr live to console and log
+        for line in process.stdout:
+            sys.stdout.write(line)
+            log.write(line)
+        for line in process.stderr:
+            sys.stderr.write(line)
+            log.write(line)
 
-    except Exception as e:
-        print(f"❌ Unexpected error in run {i}: {e}")
-        continue
+        process.wait()
 
-    # Optional: add a short delay between runs (e.g., 1 second)
-    time.sleep(1)
+        if process.returncode == 0:
+            msg = f"â Run {i} completed successfully.\n"
+        else:
+            msg = f"â ï¸ Run {i} failed with exit code {process.returncode}. Skipping...\n"
 
+        print(msg, flush=True)
+        log.write(msg)
+        log.flush()  # ensure immediate write for CI visibility
 
-print("\n🏁 All runs completed.")
+        time.sleep(1)
 
+    footer = "\nð All runs completed.\n"
+    print(footer, flush=True)
+    log.wri
