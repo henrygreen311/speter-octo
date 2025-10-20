@@ -80,13 +80,13 @@ const execPromise = util.promisify(exec);
   });
 
   try {
-    await page.goto('https://audius.co/signin', { waitUntil: 'load', timeout: 30000 });
+    await page.goto('https://audius.co/signin', { waitUntil: 'domcontentloaded' });
     await page.fill('input[aria-label="Email"]', selectedAccount.address);
     await page.fill('input[aria-label="Password"]', selectedAccount.password);
     await page.click('//*[@id="root"]/div[1]/div/div[1]/div/form/div[4]/button');
 
     try {
-      await page.waitForURL('https://audius.co/signin/confirm-email', { waitUntil: 'load', timeout: 15000 });
+      await page.waitForURL('https://audius.co/signin/confirm-email', { waitUntil: 'domcontentloaded' });
     } catch (error) {
       console.error('Warning: Timeout waiting for confirm-email page, continuing:', error.message);
     }
@@ -113,7 +113,7 @@ const execPromise = util.promisify(exec);
     await page.click('//*[@id="root"]/div[1]/div/div[1]/form/div[3]/button');
 
     try {
-      await page.waitForURL('https://audius.co/feed', { waitUntil: 'load', timeout: 30000 });
+      await page.waitForURL('https://audius.co/feed', { waitUntil: 'domcontentloaded' });
     } catch (error) {
       console.error('Warning: Timeout waiting for feed page:', error.message);
       const currentUrl = page.url();
@@ -129,7 +129,7 @@ const execPromise = util.promisify(exec);
       targetUrl = (await fs.readFile(path.join(__dirname, 'url.txt'), 'utf8')).trim();
       if (!targetUrl.startsWith('http')) throw new Error('Invalid URL format in url.txt');
       console.log('Loaded target URL from url.txt:', targetUrl);
-      await page.goto(targetUrl, { waitUntil: 'load', timeout: 30000 });
+      await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
     } catch (error) {
       console.error('Error reading or navigating to url.txt:', error.message);
       await browser.close();
@@ -159,17 +159,14 @@ try {
 try {
   console.log('Looking for popup container...');
 
-  // Wait up to 10 seconds for the popup to appear
   const popupRoot = page.locator('div._root_i58yq_1');
-  await popupRoot.waitFor({ state: 'visible', timeout: 10000 });
+  await popupRoot.waitFor({ state: 'visible' });
   console.log('Popup root detected.');
 
-  // Look for the inner popup div
   const popupContent = popupRoot.locator('div._popup_i58yq_7._popup_1isr1_1.harmony-q98mk2');
-  await popupContent.waitFor({ state: 'visible', timeout: 5000 });
+  await popupContent.waitFor({ state: 'visible' });
   console.log('Inner popup container found.');
 
-  // Look for the target button inside popupContent
   const innerButton = popupContent.locator('button.harmony-14k6qs7');
   const buttonCount = await innerButton.count();
 
@@ -218,13 +215,11 @@ try {
             await page.mouse.move(x, y, { steps: 10 });  
           }  
 
-          // --- Circle click sequence ---  
           const circle = await li.$('svg circle#Oval');  
           if (circle) {  
             console.log(`Clicking circle in item ${i + 1}`);  
             await circle.click({ delay: Math.floor(Math.random() * 200) + 50 });  
 
-            // --- NEW: Favorite (Heart) check & click ---  
             try {  
               const heartDiv = await li.$('div._heartWrapper_1nr0t_44');  
               if (heartDiv) {  
@@ -243,13 +238,10 @@ try {
             } catch (heartError) {  
               console.error(`Error handling heart button in item ${i + 1}: ${heartError.message}`);  
             }  
-            // --- END heart click logic ---  
-
           } else {  
             console.log(`Circle not found in item ${i + 1}, skipping.`);  
           }  
 
-          // --- Popup closing section ---  
           const popup = await page.$('div[role="dialog"], div.modal, div.popup');  
           if (popup) {  
             console.log('Popup detected, attempting to close...');  
