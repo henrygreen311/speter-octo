@@ -132,42 +132,33 @@ const execPromise = util.promisify(exec);
     await page.fill('input[aria-label="Code"]', otp);
 
     // === NEW: Add delay before clicking OTP submit ===
-console.log('Waiting 3s before clicking Confirm button...');
-await page.waitForTimeout(3000);
-await page.click('//*[@id="root"]/div[1]/div/div[1]/form/div[3]/button');
+    console.log('Waiting 3s before clicking Confirm button...');
+    await page.waitForTimeout(3000);
+    await page.click('//*[@id="root"]/div[1]/div/div[1]/form/div[3]/button');
 
-let feedReached = false;
+    try {
+      await page.waitForURL('https://audius.co/feed', { waitUntil: 'load', timeout: 120000 });
+    } catch (error) {
+      console.error('Warning: Timeout waiting for feed page:', error.message);
+      const currentUrl = page.url();
+      if (!currentUrl.includes('https://audius.co/feed')) {
+        console.error('Failed to reach feed page, current URL:', currentUrl);
+        await browser.close();
+        return;
+      }
+    }
 
-try {
-  await page.waitForURL('https://audius.co/feed', { waitUntil: 'load', timeout: 60000 });
-  feedReached = true;
-  console.log('Successfully reached feed page.');
-} catch (error) {
-  console.warn('Warning: Timeout waiting for feed page, proceeding anyway:', error.message);
-  const currentUrl = page.url();
-  if (currentUrl.includes('https://audius.co/feed')) {
-    console.log('Feed page detected after timeout window.');
-    feedReached = true;
-  } else {
-    console.log(`Still not on feed page (current URL: ${currentUrl}). Proceeding to target URL...`);
-  }
-}
-
-// === Continue with target URL regardless of feed page status ===
-let targetUrl;
-try {
-  targetUrl = (await fs.readFile(path.join(__dirname, 'url.txt'), 'utf8')).trim();
-  if (!targetUrl.startsWith('http')) throw new Error('Invalid URL format in url.txt');
-  console.log('Loaded target URL from url.txt:', targetUrl);
-
-  // If feed was reached, navigate normally; if not, proceed anyway
-  await page.goto(targetUrl, { waitUntil: 'load', timeout: 60000 });
-  console.log(`Navigated to target URL: ${targetUrl}`);
-} catch (error) {
-  console.error('Error reading or navigating to target URL:', error.message);
-  await browser.close();
-  return;
-}
+    let targetUrl;
+    try {
+      targetUrl = (await fs.readFile(path.join(__dirname, 'url.txt'), 'utf8')).trim();
+      if (!targetUrl.startsWith('http')) throw new Error('Invalid URL format in url.txt');
+      console.log('Loaded target URL from url.txt:', targetUrl);
+      await page.goto(targetUrl, { waitUntil: 'load', timeout: 60000 });
+    } catch (error) {
+      console.error('Error reading or navigating to url.txt:', error.message);
+      await browser.close();
+      return;
+    }
 
     // --- FOLLOW BUTTON SEQUENCE ---
 try {
