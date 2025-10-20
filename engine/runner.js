@@ -1,12 +1,12 @@
-// batch_runner.js
-// Usage: node batch_runner.js
+// runner.js
+// Usage: node runner.js
 
 const { exec } = require("child_process");
 
 const totalRuns = 6; // adjust as needed
 let currentRun = 0;
 
-console.log(`Starting batch runner â executing creator.js ${totalRuns} times.\n`);
+console.log(`Starting batch runner - executing creator.js ${totalRuns} times.\n`);
 
 function runCreator() {
   if (currentRun >= totalRuns) {
@@ -42,4 +42,4 @@ function runCreator() {
   });
 }
 
-runCreator(
+runCreator();
