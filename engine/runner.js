@@ -3,7 +3,7 @@
 
 const { exec } = require('child_process');
 
-const totalRuns = 2;
+const totalRuns = 6;
 let currentRun = 0;
 
 console.log(`🚀 Starting batch main — will run main.js ${totalRuns} times.\n`);
