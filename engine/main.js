@@ -35,9 +35,25 @@ const execPromise = util.promisify(exec);
   }
 
   const validAccounts = Object.values(accounts).filter(a => a.register === 'yes');
+
   if (validAccounts.length === 0) {
-    console.log('No accounts with register: yes found');
-    return;
+    console.log('No accounts with register: yes found. Recopying tempmail.json from Creator...');
+    try {
+      await fs.copyFile(sourcePath, renamedPath);
+      const data = await fs.readFile(renamedPath, 'utf8');
+      accounts = JSON.parse(data);
+      console.log('Successfully recopied Creator/tempmail_accounts.json ➜ tempmail.json');
+
+      // Re-filter after reloading
+      const refreshedAccounts = Object.values(accounts).filter(a => a.register === 'yes');
+      if (refreshedAccounts.length === 0) {
+        console.error('Still no accounts with register: yes after recopying.');
+        return;
+      }
+    } catch (copyError) {
+      console.error('Error recopying tempmail.json:', copyError);
+      return;
+    }
   }
 
   const randomIndex = Math.floor(Math.random() * validAccounts.length);
