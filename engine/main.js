@@ -101,19 +101,22 @@ const execPromise = util.promisify(exec);
     await page.fill('input[aria-label="Password"]', selectedAccount.password);
 
     // === NEW: Add delay before clicking Sign In ===
-    console.log('Waiting 3s before clicking Sign In button...');
-    await page.waitForTimeout(3000);
+    console.log('Waiting 1s before clicking Sign In button...');
+    await page.waitForTimeout(1000);
     await page.click('//*[@id="root"]/div[1]/div/div[1]/div/form/div[4]/button');
 
     try {
-      await page.waitForURL('https://audius.co/signin/confirm-email', { waitUntil: 'load', timeout: 60000 });
-    } catch (error) {
-      console.error('Warning: Timeout waiting for confirm-email page, continuing:', error.message);
-    }
+  await page.waitForURL('https://audius.co/signin/confirm-email', { waitUntil: 'load', timeout: 60000 });
+  console.log('Reached confirm-email page. Waiting 2s before retrieving OTP...');
+  await page.waitForTimeout(2000); // <-- Added delay
+} catch (error) {
+  console.error('Warning: Timeout waiting for confirm-email page, continuing:', error.message);
+}
 
-    let otp;
-    try {
-      const { stdout } = await execPromise(`python3 ../Creator/tempmail.py inbox ${selectedAccount.address}`);
+let otp;
+try {
+  console.log('Running tempmail.py to retrieve OTP...');
+  const { stdout } = await execPromise(`python3 ../Creator/tempmail.py inbox ${selectedAccount.address}`);
       const otpMatch = stdout.match(/\d{3}\s\d{3}/);
       if (otpMatch) {
         otp = otpMatch[0];
@@ -132,32 +135,21 @@ const execPromise = util.promisify(exec);
     await page.fill('input[aria-label="Code"]', otp);
 
     // === NEW: Add delay before clicking OTP submit ===
-    console.log('Waiting 3s before clicking Confirm button...');
-    await page.waitForTimeout(3000);
+    console.log('Waiting 1s before clicking Confirm button...');
+    await page.waitForTimeout(1000);
     await page.click('//*[@id="root"]/div[1]/div/div[1]/form/div[3]/button');
 
     try {
       await page.waitForURL('https://audius.co/feed', { waitUntil: 'load', timeout: 60000 });
     } catch (error) {
-  console.error('Warning: Timeout waiting for feed page:', error.message);
-  const currentUrl = page.url();
-
-  if (!currentUrl.includes('https://audius.co/feed')) {
-    console.error('Failed to reach feed page, current URL:', currentUrl);
-
-    // === NEW: Take a screenshot before closing ===
-    try {
-      const screenshotPath = path.join(__dirname, `feed_error_${Date.now()}.png`);
-      await page.screenshot({ path: screenshotPath, fullPage: true });
-      console.log(`📸 Screenshot captured at: ${screenshotPath}`);
-    } catch (screenshotError) {
-      console.error('Error capturing screenshot:', screenshotError.message);
+      console.error('Warning: Timeout waiting for feed page:', error.message);
+      const currentUrl = page.url();
+      if (!currentUrl.includes('https://audius.co/feed')) {
+        console.error('Failed to reach feed page, current URL:', currentUrl);
+        await browser.close();
+        return;
+      }
     }
-
-    await browser.close();
-    return;
-  }
-}
 
     let targetUrl;
     try {
