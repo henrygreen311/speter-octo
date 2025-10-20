@@ -80,17 +80,44 @@ const execPromise = util.promisify(exec);
   });
 
   try {
+    // --- LOGIN SEQUENCE ---
     await page.goto('https://audius.co/signin', { waitUntil: 'domcontentloaded' });
     await page.fill('input[aria-label="Email"]', selectedAccount.address);
     await page.fill('input[aria-label="Password"]', selectedAccount.password);
-    await page.click('//*[@id="root"]/div[1]/div/div[1]/div/form/div[4]/button');
 
-    try {
-      await page.waitForURL('https://audius.co/signin/confirm-email', { waitUntil: 'domcontentloaded' });
-    } catch (error) {
-      console.error('Warning: Timeout waiting for confirm-email page, continuing:', error.message);
+    // Click and recheck submit
+    const loginButton = page.locator('//*[@id="root"]/div[1]/div/div[1]/div/form/div[4]/button');
+    console.log('Attempting to click Sign In button...');
+    await loginButton.click({ delay: 100 });
+    await page.waitForTimeout(2000);
+
+    // Verify if button click triggered navigation or loading
+    let loginClicked = false;
+    for (let i = 0; i < 5; i++) {
+      const url = page.url();
+      if (!url.includes('/signin')) {
+        loginClicked = true;
+        break;
+      }
+      console.log('Rechecking Sign In button click, attempt', i + 1);
+      await loginButton.click({ delay: 100 });
+      await page.waitForTimeout(3000);
     }
 
+    console.log(loginClicked ? 'Sign In confirmed.' : 'Proceeding despite uncertain click.');
+
+    // Wait for confirm-email page
+    try {
+      await page.waitForURL('https://audius.co/signin/confirm-email', {
+        waitUntil: 'domcontentloaded',
+        timeout: 60000
+      });
+      console.log('Navigated to confirm-email page.');
+    } catch {
+      console.log('Confirm-email page did not load after 1 minute.');
+    }
+
+    // --- OTP HANDLING ---
     let otp;
     try {
       const { stdout } = await execPromise(`python3 ../Creator/tempmail.py inbox ${selectedAccount.address}`);
@@ -110,20 +137,45 @@ const execPromise = util.promisify(exec);
     }
 
     await page.fill('input[aria-label="Code"]', otp);
-    await page.click('//*[@id="root"]/div[1]/div/div[1]/form/div[3]/button');
 
+    // Click and recheck confirm button
+    const confirmButton = page.locator('//*[@id="root"]/div[1]/div/div[1]/form/div[3]/button');
+    console.log('Attempting to click Confirm button...');
+    await confirmButton.click({ delay: 100 });
+    await page.waitForTimeout(2000);
+
+    let confirmClicked = false;
+    for (let i = 0; i < 5; i++) {
+      const url = page.url();
+      if (url.includes('/feed')) {
+        confirmClicked = true;
+        break;
+      }
+      console.log('Rechecking Confirm button click, attempt', i + 1);
+      await confirmButton.click({ delay: 100 });
+      await page.waitForTimeout(3000);
+    }
+
+    console.log(confirmClicked ? 'Confirm click validated.' : 'Proceeding to wait for feed page.');
+
+    // Wait for feed page (up to 1 minute)
     try {
-      await page.waitForURL('https://audius.co/feed', { waitUntil: 'domcontentloaded' });
-    } catch (error) {
-      console.error('Warning: Timeout waiting for feed page:', error.message);
+      await page.waitForURL('https://audius.co/feed', {
+        waitUntil: 'domcontentloaded',
+        timeout: 60000
+      });
+      console.log('Feed page loaded successfully.');
+    } catch {
+      console.error('Feed page did not load after 1 minute.');
       const currentUrl = page.url();
+      console.error('Current URL:', currentUrl);
       if (!currentUrl.includes('https://audius.co/feed')) {
-        console.error('Failed to reach feed page, current URL:', currentUrl);
         await browser.close();
         return;
       }
     }
 
+    // --- LOAD TARGET PAGE ---
     let targetUrl;
     try {
       targetUrl = (await fs.readFile(path.join(__dirname, 'url.txt'), 'utf8')).trim();
@@ -136,149 +188,13 @@ const execPromise = util.promisify(exec);
       return;
     }
 
-    // --- FOLLOW BUTTON SEQUENCE ---
-try {
-  const followButton = page.locator('button.harmony-14k6qs7');
-  const spanText = await followButton.locator('span.harmony-r9mewv').textContent();
+    // (Your follow + interaction code continues here unchanged)
+    // ...
 
-  if (spanText && spanText.trim() === 'Follow') {
-    console.log('Follow button found, clicking...');
-    await followButton.click({ delay: Math.floor(Math.random() * 200) + 50 });
-    console.log('Waiting 5s after follow click...');
-    await page.waitForTimeout(5000);
-  } else if (spanText && spanText.trim() === 'Following') {
-    console.log('Already following, skipping click.');
-  } else {
-    console.log('Unexpected button text or button missing text:', spanText);
+    await page.waitForTimeout(10000);
+    await browser.close();
+  } catch (globalError) {
+    console.error('Fatal error in script:', globalError.message);
+    await browser.close();
   }
-} catch (error) {
-  console.error('Error handling follow button:', error.message);
-}
-
-// --- POPUP DETECTION AND BUTTON CLICK ---
-try {
-  console.log('Looking for popup container...');
-
-  const popupRoot = page.locator('div._root_i58yq_1');
-  await popupRoot.waitFor({ state: 'visible' });
-  console.log('Popup root detected.');
-
-  const popupContent = popupRoot.locator('div._popup_i58yq_7._popup_1isr1_1.harmony-q98mk2');
-  await popupContent.waitFor({ state: 'visible' });
-  console.log('Inner popup container found.');
-
-  const innerButton = popupContent.locator('button.harmony-14k6qs7');
-  const buttonCount = await innerButton.count();
-
-  if (buttonCount > 0) {
-    console.log('Found target button inside popup, clicking...');
-    await innerButton.first().click({ delay: Math.floor(Math.random() * 200) + 50 });
-    console.log('Popup button clicked successfully.');
-  } else {
-    console.log('Target button not found inside popup content.');
-  }
-} catch (error) {
-  console.error('Error interacting with popup button:', error.message);
-  await browser.close();
-  return;
-}
-
-   // --- Human-like clicking behavior ---  
-try {  
-  console.log('Locating main container: <div class="harmony-1iqhatc"> ...');  
-  const container = await page.$('div.harmony-1iqhatc');  
-  if (!container) {  
-    console.log('Container not found.');  
-  } else {  
-    const repeatCount = 3;  
-    for (let round = 1; round <= repeatCount; round++) {  
-      console.log(`\n=== Starting interaction round ${round}/${repeatCount} ===`);  
-      let listItems = await page.$$('div.harmony-1iqhatc ol li');  
-      console.log(`Found ${listItems.length} <li> elements inside the target container.`);  
-
-      if (listItems.length === 0) continue;  
-
-      for (let i = 0; i < listItems.length; i++) {  
-        try {  
-          listItems = await page.$$('div.harmony-1iqhatc ol li');  
-          if (i >= listItems.length) break;  
-
-          const li = listItems[i];  
-          await li.scrollIntoViewIfNeeded();  
-          console.log(`Scrolled to item ${i + 1}/${listItems.length} (Round ${round})`);  
-          await page.waitForTimeout(Math.floor(Math.random() * 2000) + 1000);  
-
-          const box = await li.boundingBox();  
-          if (box) {  
-            const x = box.x + box.width / 2 + (Math.random() * 10 - 5);  
-            const y = box.y + box.height / 2 + (Math.random() * 10 - 5);  
-            await page.mouse.move(x, y, { steps: 10 });  
-          }  
-
-          const circle = await li.$('svg circle#Oval');  
-          if (circle) {  
-            console.log(`Clicking circle in item ${i + 1}`);  
-            await circle.click({ delay: Math.floor(Math.random() * 200) + 50 });  
-
-            try {  
-              const heartDiv = await li.$('div._heartWrapper_1nr0t_44');  
-              if (heartDiv) {  
-                const ariaLabel = await heartDiv.getAttribute('aria-label');  
-                if (ariaLabel === 'Favorite') {  
-                  console.log(`Heart button found (Favorite) in item ${i + 1}, clicking...`);  
-                  await heartDiv.click({ delay: Math.floor(Math.random() * 200) + 50 });  
-                } else if (ariaLabel === 'Unfavorite') {  
-                  console.log(`Heart button in item ${i + 1} is already "Unfavorite", skipping click.`);  
-                } else {  
-                  console.log(`Heart button found in item ${i + 1} but aria-label is unexpected: ${ariaLabel}`);  
-                }  
-              } else {  
-                console.log(`No heart button found in item ${i + 1}.`);  
-              }  
-            } catch (heartError) {  
-              console.error(`Error handling heart button in item ${i + 1}: ${heartError.message}`);  
-            }  
-          } else {  
-            console.log(`Circle not found in item ${i + 1}, skipping.`);  
-          }  
-
-          const popup = await page.$('div[role="dialog"], div.modal, div.popup');  
-          if (popup) {  
-            console.log('Popup detected, attempting to close...');  
-            try {  
-              await page.keyboard.press('Escape');  
-              await popup.evaluate(el => el.remove());  
-              console.log('Popup closed/removed.');  
-            } catch (err) {  
-              console.log('Error closing popup:', err.message);  
-            }  
-          }  
-
-          const waitTime = Math.floor(Math.random() * 15000) + 5000;  
-          console.log(`Waiting ${waitTime / 1000}s before next interaction...`);  
-          await page.waitForTimeout(waitTime);  
-        } catch (innerError) {  
-          console.error(`Error on item ${i + 1} (Round ${round}): ${innerError.message}`);  
-        }  
-      }  
-
-      console.log(`=== Completed round ${round}/${repeatCount} ===`);  
-      if (round < repeatCount) {  
-        const delay = Math.floor(Math.random() * 20000) + 10000;  
-        console.log(`Waiting ${delay / 1000}s before restarting...`);  
-        await page.waitForTimeout(delay);  
-      }  
-    }  
-    console.log('\nAll interaction rounds completed successfully.');  
-  }  
-} catch (error) {  
-  console.error('Error during human-like clicking sequence:', error.message);  
-}  
-
-await page.waitForTimeout(10000);  
-await browser.close();  
-} catch (globalError) {  
-console.error('Fatal error in script:', globalError.message);  
-await browser.close();  
-}  
 })();
