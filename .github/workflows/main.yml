@@ -59,9 +59,13 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add tempmail_accounts.json
-          git diff --quiet || git commit -m "Update tempmail_accounts.json [ci skip]"
-          git push
+          git add tempmail_accounts.json || true
+          if [ -n "$(git status --porcelain tempmail_accounts.json)" ]; then
+            git commit -m "Update tempmail_accounts.json [ci skip]"
+            git push
+          else
+            echo "No changes to commit in Creator folder."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -80,15 +84,24 @@ jobs:
         run: |
           xvfb-run -a node runner.js
 
-      # Step 11: Commit and push updated tempmail.json and any screenshots
+      # Step 11: Commit and push updated tempmail.json and screenshots
       - name: Commit and push updates from Engine
         working-directory: engine
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          # Add updated JSON and any screenshots
-          git add tempmail.json *.png || true
-          git diff --quiet || git commit -m "Update tempmail.json and screenshots [ci skip]"
-          git push
+
+          # Stage only desired files, skip scripts and dependencies
+          git add tempmail.json *.png 2>/dev/null || true
+          git restore --staged img.py tempmail.py 2>/dev/null || true
+          git restore --staged package.json package-lock.json 2>/dev/null || true
+          git restore --staged node_modules 2>/dev/null || true
+
+          if [ -n "$(git status --porcelain tempmail.json *.png 2>/dev/null)" ]; then
+            git commit -m "Update tempmail.json and screenshots [ci skip]"
+            git push
+          else
+            echo "No changes to commit in Engine folder."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
