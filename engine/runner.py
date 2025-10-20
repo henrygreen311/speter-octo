@@ -2,46 +2,44 @@ import subprocess
 import time
 import sys
 
-# Configurations
 total_runs = 6
-log_file = "run_log.txt"
+current_run = 0
 
-# Open log file for both read & write
-with open(log_file, "w", encoding="utf-8") as log:
-    for i in range(1, total_runs + 1):
-        header = f"\nð Running iteration {i}...\n"
-        print(header, flush=True)
-        log.write(header)
+print(f"Starting batch runner â executing creator.js {total_runs} times.\n")
 
-        # Run node script with live output
+while current_run < total_runs:
+    current_run += 1
+    print(f"\n--- Run {current_run} of {total_runs} starting ---", flush=True)
+    start_time = time.time()
+
+    try:
         process = subprocess.Popen(
-            ["node", "main.js"],
+            ["node", "creator.js"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
         )
 
-        # Stream stdout and stderr live to console and log
         for line in process.stdout:
             sys.stdout.write(line)
-            log.write(line)
         for line in process.stderr:
             sys.stderr.write(line)
-            log.write(line)
 
-        process.wait()
+        process.wait(timeout=10 * 60)  # 10-minute safeguard
+        duration = round(time.time() - start_time, 2)
 
         if process.returncode == 0:
-            msg = f"â Run {i} completed successfully.\n"
+            print(f"Run {current_run} completed successfully in {duration}s.", flush=True)
         else:
-            msg = f"â ï¸ Run {i} failed with exit code {process.returncode}. Skipping...\n"
+            print(f"Run {current_run} failed (exit code {process.returncode}). Continuing.", flush=True)
 
-        print(msg, flush=True)
-        log.write(msg)
-        log.flush()  # ensure immediate write for CI visibility
+    except subprocess.TimeoutExpired:
+        print(f"Run {current_run} timed out after 10 minutes. Skipping.", flush=True)
+        process.kill()
 
-        time.sleep(1)
+    except Exception as e:
+        print(f"Unexpected error during run {current_run}: {e}", flush=True)
 
-    footer = "\nð All runs completed.\n"
-    print(footer, flush=True)
-    log.wri
+    time.sleep(2)  # delay between runs
+
+print(f"\nAll {total_runs} runs completed.", flush=Tru
