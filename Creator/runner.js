@@ -3,7 +3,7 @@
 
 const { exec } = require('child_process');
 
-const totalRuns = 0;
+const totalRuns = 5;
 let currentRun = 0;
 
 console.log(`🚀 Starting batch creator — will run creator.js ${totalRuns} times.\n`);
