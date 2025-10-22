@@ -471,5 +471,28 @@
   "05fd4b56@tiffincrane.com": {
     "address": "05fd4b56@tiffincrane.com",
     "password": "c96c123e-294c-44c4-b861-ee49fe698e9b"
+  },
+  "468f8288@tiffincrane.com": {
+    "address": "468f8288@tiffincrane.com",
+    "password": "a0557799-8cd9-4872-8f46-1831329da645",
+    "register": "yes"
+  },
+  "d0cfe871@tiffincrane.com": {
+    "address": "d0cfe871@tiffincrane.com",
+    "password": "bdd7c390-3db0-418f-90d8-62120373f26a",
+    "register": "yes"
+  },
+  "5e4f1f9c@tiffincrane.com": {
+    "address": "5e4f1f9c@tiffincrane.com",
+    "password": "a462b538-2b80-4a54-b7ce-ddd4087ec238"
+  },
+  "7d90b8c8@tiffincrane.com": {
+    "address": "7d90b8c8@tiffincrane.com",
+    "password": "a2af8eb4-278c-43a0-bd0a-fab03ffacb2b"
+  },
+  "adc5b946@tiffincrane.com": {
+    "address": "adc5b946@tiffincrane.com",
+    "password": "c6713a5b-422d-4759-916b-5dbf4813634a",
+    "register": "yes"
   }
 }
