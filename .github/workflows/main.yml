@@ -13,6 +13,8 @@ jobs:
       # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 2: Install system dependencies
       - name: Install system dependencies
@@ -41,7 +43,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install requests
 
-      # Step 6: Make Python scripts executable
+      # Step 6: Make Creator scripts executable
       - name: Make Creator scripts executable
         working-directory: Creator
         run: |
@@ -53,14 +55,14 @@ jobs:
         run: |
           xvfb-run -a node runner.js
 
-      # Step 8: Store Creator outputs as artifacts
-      - name: Upload Creator results
-        uses: actions/upload-artifact@v4
-        with:
-          name: creator-output
-          path: |
-            Creator/tempmail_accounts.json
-          retention-days: 7
+      # Step 8: Commit and push Creator results to repo
+      - name: Commit and push Creator results
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add Creator/tempmail_accounts.json
+          git commit -m "Update Creator results [auto]" || echo "No changes to commit"
+          git push origin HEAD:${{ github.ref }}
 
       # Step 9: Install dependencies in engine folder
       - name: Install Engine dependencies
@@ -77,12 +79,11 @@ jobs:
         run: |
           xvfb-run -a node runner.js
 
-      # Step 11: Store Engine outputs (JSON + screenshots) as artifacts
-      - name: Upload Engine results
-        uses: actions/upload-artifact@v4
-        with:
-          name: engine-output
-          path: |
-            engine/tempmail.json
-            engine/*.png
-          retention-days: 7
+      # Step 11: Commit and push Engine results to repo
+      - name: Commit and push Engine results
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add engine/tempmail.json engine/*.png
+          git commit -m "Update Engine results [auto]" || echo "No changes to commit"
+          git push origin HEAD:${{ github.ref }}
