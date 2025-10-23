@@ -141,11 +141,6 @@
     "password": "27637b39-4edc-462a-a5ee-67931a7faf3a",
     "register": "yes"
   },
-  "20a26fef@tiffincrane.com": {
-    "address": "20a26fef@tiffincrane.com",
-    "password": "a454f523-f721-4f7a-9637-d71cd130b0db",
-    "register": "yes"
-  },
   "a620200b@tiffincrane.com": {
     "address": "a620200b@tiffincrane.com",
     "password": "3d2945a1-1680-463a-9178-672a8fdc60ab",
@@ -378,11 +373,6 @@
     "address": "41ce0854@tiffincrane.com",
     "password": "15e2754e-13c9-4f2b-860b-a52c76f26c4d"
   },
-  "be644168@tiffincrane.com": {
-    "address": "be644168@tiffincrane.com",
-    "password": "4379258a-cccd-4486-b665-49aeff21fed7",
-    "register": "yes"
-  },
   "8fd63baf@tiffincrane.com": {
     "address": "8fd63baf@tiffincrane.com",
     "password": "18fdc91d-1599-4f27-9784-662a6214f1bf",
@@ -471,11 +461,6 @@
     "address": "d54cb6e7@tiffincrane.com",
     "password": "8adc4580-583e-4b34-b30a-7ad765a71d9b"
   },
-  "3a65d6e6@tiffincrane.com": {
-    "address": "3a65d6e6@tiffincrane.com",
-    "password": "73997ae1-981f-4067-b11e-55622fbb0ecf",
-    "register": "yes"
-  },
   "c962f0ce@tiffincrane.com": {
     "address": "c962f0ce@tiffincrane.com",
     "password": "bca4479f-79fe-4597-9c1e-4506de75db3a",
@@ -528,11 +513,6 @@
   "7dd3310f@tiffincrane.com": {
     "address": "7dd3310f@tiffincrane.com",
     "password": "7b6806cd-9719-4cf8-bf44-54dac0288536",
-    "register": "yes"
-  },
-  "bd325ed4@tiffincrane.com": {
-    "address": "bd325ed4@tiffincrane.com",
-    "password": "9150b4bf-f4ff-4c02-a454-0ee30cde800a",
     "register": "yes"
   },
   "b7f2120c@tiffincrane.com": {
@@ -675,19 +655,9 @@
     "password": "8282e5ab-dea0-44b9-b360-5d450fedc49d",
     "register": "yes"
   },
-  "65fb8c4c@tiffincrane.com": {
-    "address": "65fb8c4c@tiffincrane.com",
-    "password": "9c04897b-521d-4054-bc74-975a26595900",
-    "register": "yes"
-  },
   "6512f449@tiffincrane.com": {
     "address": "6512f449@tiffincrane.com",
     "password": "86762891-5036-4579-a9e7-5e4ec395d32f",
-    "register": "yes"
-  },
-  "36827bbc@tiffincrane.com": {
-    "address": "36827bbc@tiffincrane.com",
-    "password": "39db0aa5-2546-4e39-b31e-a77ff370e64e",
     "register": "yes"
   }
 }
