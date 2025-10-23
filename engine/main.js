@@ -281,7 +281,7 @@ try {
             }  
           }  
 
-          const waitTime = Math.floor(Math.random() * 15000) + 5000;  
+          const waitTime = Math.floor(Math.random() * 30000) + 30000;  
           console.log(`Waiting ${waitTime / 1000}s before next interaction...`);  
           await page.waitForTimeout(waitTime);  
         } catch (innerError) {  
