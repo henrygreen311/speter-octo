@@ -5,10 +5,10 @@ const { exec } = require('child_process');
 
 // 🧩 Configuration
 const scripts = [
-  'main.js',
-  'main_1.js',
-  'main_2.js',
-  'main_3.js',
+  'main_4.js',
+  'main_5.js',
+  'main_6.js',
+  'main_7.js',
 ];
 const totalRunsPerScript = 10;
 const timeoutMs = 10 * 60 * 1000; // 10 minutes

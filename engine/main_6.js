@@ -8,7 +8,7 @@ const execPromise = util.promisify(exec);
 (async () => {
   const sourcePath = path.join(__dirname, '../Creator', 'tempmail_accounts.json');
   const destPath = path.join(__dirname, 'tempmail_accounts.json');
-  const renamedPath = path.join(__dirname, 'tempmail.json');
+  const renamedPath = path.join(__dirname, 'tempmail_6.json');
   let accounts;
 
   try {
@@ -16,7 +16,7 @@ const execPromise = util.promisify(exec);
       let data;
       try {
         data = await fs.readFile(renamedPath, 'utf8');
-        console.log('Loaded existing tempmail.json');
+        console.log('Loaded existing tempmail_6.json');
       } catch {
         data = await fs.readFile(destPath, 'utf8');
         console.log('Loaded existing tempmail_accounts.json');
@@ -27,7 +27,7 @@ const execPromise = util.promisify(exec);
       await fs.copyFile(sourcePath, renamedPath);
       const data = await fs.readFile(renamedPath, 'utf8');
       accounts = JSON.parse(data);
-      console.log('Copied and renamed Creator/tempmail_accounts.json ➜ tempmail.json');
+      console.log('Copied and renamed Creator/tempmail_accounts.json ➜ tempmail_6.json');
     }
   } catch (error) {
     console.error('Error handling tempmail files:', error);
@@ -37,12 +37,12 @@ const execPromise = util.promisify(exec);
   const validAccounts = Object.values(accounts).filter(a => a.register === 'yes');
 
   if (validAccounts.length === 0) {
-    console.log('No accounts with register: yes found. Recopying tempmail.json from Creator...');
+    console.log('No accounts with register: yes found. Recopying tempmail_6.json from Creator...');
     try {
       await fs.copyFile(sourcePath, renamedPath);
       const data = await fs.readFile(renamedPath, 'utf8');
       accounts = JSON.parse(data);
-      console.log('Successfully recopied Creator/tempmail_accounts.json ➜ tempmail.json');
+      console.log('Successfully recopied Creator/tempmail_accounts.json ➜ tempmail_6.json');
 
       // Re-filter after reloading
       const refreshedAccounts = Object.values(accounts).filter(a => a.register === 'yes');
@@ -51,7 +51,7 @@ const execPromise = util.promisify(exec);
         return;
       }
     } catch (copyError) {
-      console.error('Error recopying tempmail.json:', copyError);
+      console.error('Error recopying tempmail_6.json:', copyError);
       return;
     }
   }
@@ -153,12 +153,12 @@ try {
 
     let targetUrl;
     try {
-      targetUrl = (await fs.readFile(path.join(__dirname, 'url.txt'), 'utf8')).trim();
-      if (!targetUrl.startsWith('http')) throw new Error('Invalid URL format in url.txt');
-      console.log('Loaded target URL from url.txt:', targetUrl);
+      targetUrl = (await fs.readFile(path.join(__dirname, 'url_6.txt'), 'utf8')).trim();
+      if (!targetUrl.startsWith('http')) throw new Error('Invalid URL format in url_6.txt');
+      console.log('Loaded target URL from url_6.txt:', targetUrl);
       await page.goto(targetUrl, { waitUntil: 'load', timeout: 60000 });
     } catch (error) {
-      console.error('Error reading or navigating to url.txt:', error.message);
+      console.error('Error reading or navigating to url_6.txt:', error.message);
       await browser.close();
       return;
     }
