@@ -1,14 +1,10 @@
+
 name: tester
 
 on:
   schedule:
     - cron: '0 */1 * * *'   # Every 2 hours
   workflow_dispatch:         # Manual trigger
-
-# Allow concurrent runs across workflows while preventing internal overlap
-concurrency:
-  group: tester-${{ github.workflow }}-${{ github.run_id }}
-  cancel-in-progress: false
 
 jobs:
   run-scripts:
@@ -66,7 +62,6 @@ jobs:
           git pull --rebase origin $BRANCH_NAME || true
 
           git add Creator/tempmail_accounts.json
-
           git commit -m "Update Creator results [auto]" || echo "No changes to commit"
           git push --force-with-lease origin $BRANCH_NAME
 
