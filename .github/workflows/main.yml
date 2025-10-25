@@ -5,8 +5,10 @@ on:
     - cron: '0 */1 * * *'   # Every 2 hours
   workflow_dispatch:         # Manual trigger
 
+# ✅ Allow concurrent runs between different workflows
+# Each workflow uses its own group name derived from the workflow and run ID
 concurrency:
-  group: tester-auto-commit   # Prevent overlapping runs
+  group: tester-${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -16,7 +18,7 @@ jobs:
     steps:
       # Step 1: Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0   # Required for pull/rebase operations
@@ -51,14 +53,12 @@ jobs:
       # Step 6: Make Creator scripts executable
       - name: Make Creator scripts executable
         working-directory: Creator
-        run: |
-          chmod +x tempmail.py img.py
+        run: chmod +x tempmail.py img.py
 
       # Step 7: Run Creator runner.js inside Xvfb
       - name: Run Creator runner.js with Xvfb
         working-directory: Creator
-        run: |
-          xvfb-run -a node runner.js
+        run: xvfb-run -a node runner.js
 
       # ✅ Step 8: Commit and push Creator results safely
       - name: Commit and push Creator results
@@ -66,21 +66,13 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Detect branch dynamically
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
           echo "Working on branch: $BRANCH_NAME"
 
-          # Sync with remote before pushing
           git fetch origin $BRANCH_NAME
           git pull --rebase origin $BRANCH_NAME || true
-
-          # Add updated files
           git add Creator/tempmail_accounts.json
-
-          # Commit changes if any
           git commit -m "Update Creator results [auto]" || echo "No changes to commit"
-
-          # Push safely
           git push --force-with-lease origin $BRANCH_NAME
 
       # Step 9: Install dependencies in Engine folder
@@ -95,8 +87,7 @@ jobs:
       # Step 10: Run Engine runner.js with Xvfb
       - name: Run Engine runner.js with Xvfb
         working-directory: engine
-        run: |
-          xvfb-run -a node runner.js
+        run: xvfb-run -a node runner.js
 
       # ✅ Step 11: Commit and push Engine results safely
       - name: Commit and push Engine results
@@ -104,21 +95,15 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Detect current branch dynamically
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
           echo "Working on branch: $BRANCH_NAME"
 
-          # Ensure we're synced with latest remote state
           git fetch origin $BRANCH_NAME
           git pull --rebase origin $BRANCH_NAME || true
-
-          # Add generated Engine output files
           git add engine/tempmail.json \
                   engine/tempmail_1.json \
                   engine/tempmail_2.json \
                   engine/tempmail_3.json \
                   engine/*.png
-
-          # Commit and push updates
           git commit -m "Update Engine results [auto]" || echo "No changes to commit"
           git push --force-with-lease origin $BRANCH_NAME
