@@ -5,8 +5,7 @@ on:
     - cron: '0 */1 * * *'   # Every 2 hours
   workflow_dispatch:         # Manual trigger
 
-#  Allow concurrent runs between different workflows
-# Each workflow uses its own group name derived from the workflow and run ID
+# Allow concurrent runs across workflows while preventing internal overlap
 concurrency:
   group: tester-${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
@@ -16,32 +15,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
       - name: Checkout repository
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0   # Required for pull/rebase operations
 
-      # Step 2: Install system dependencies
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb
 
-      # Step 3: Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # Step 4: Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      # Step 5: Install dependencies in Creator folder
       - name: Install Creator dependencies
         working-directory: Creator
         run: |
@@ -50,17 +44,16 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install requests
 
-      # Step 6: Make Creator scripts executable
       - name: Make Creator scripts executable
         working-directory: Creator
-        run: chmod +x tempmail.py img.py
+        run: |
+          chmod +x tempmail.py img.py
 
-      # Step 7: Run Creator runner.js inside Xvfb
       - name: Run Creator runner.js with Xvfb
         working-directory: Creator
-        run: xvfb-run -a node runner.js
+        run: |
+          xvfb-run -a node runner.js
 
-      #  Step 8: Commit and push Creator results safely
       - name: Commit and push Creator results
         run: |
           git config --global user.name "github-actions[bot]"
@@ -71,11 +64,12 @@ jobs:
 
           git fetch origin $BRANCH_NAME
           git pull --rebase origin $BRANCH_NAME || true
+
           git add Creator/tempmail_accounts.json
+
           git commit -m "Update Creator results [auto]" || echo "No changes to commit"
           git push --force-with-lease origin $BRANCH_NAME
 
-      # Step 9: Install dependencies in Engine folder
       - name: Install Engine dependencies
         working-directory: engine
         run: |
@@ -84,12 +78,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install requests
 
-      # Step 10: Run Engine runner.js with Xvfb
       - name: Run Engine runner.js with Xvfb
         working-directory: engine
-        run: xvfb-run -a node runner.js
+        run: |
+          xvfb-run -a node runner.js
 
-      #  Step 11: Commit and push Engine results safely
       - name: Commit and push Engine results
         run: |
           git config --global user.name "github-actions[bot]"
@@ -100,10 +93,12 @@ jobs:
 
           git fetch origin $BRANCH_NAME
           git pull --rebase origin $BRANCH_NAME || true
+
           git add engine/tempmail.json \
                   engine/tempmail_1.json \
                   engine/tempmail_2.json \
                   engine/tempmail_3.json \
                   engine/*.png
+
           git commit -m "Update Engine results [auto]" || echo "No changes to commit"
           git push --force-with-lease origin $BRANCH_NAME
