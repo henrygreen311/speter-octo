@@ -5,6 +5,10 @@ on:
     - cron: '0 */1 * * *'   # Every 2 hours
   workflow_dispatch:         # Manual trigger
 
+concurrency:
+  group: tester-auto-commit   # Prevent overlapping runs
+  cancel-in-progress: false
+
 jobs:
   run-scripts:
     runs-on: ubuntu-latest
@@ -15,6 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0   # Required for pull/rebase operations
 
       # Step 2: Install system dependencies
       - name: Install system dependencies
@@ -49,22 +54,36 @@ jobs:
         run: |
           chmod +x tempmail.py img.py
 
-      # Step 7: Run runner.js inside Xvfb
+      # Step 7: Run Creator runner.js inside Xvfb
       - name: Run Creator runner.js with Xvfb
         working-directory: Creator
         run: |
           xvfb-run -a node runner.js
 
-      # Step 8: Commit and push Creator results to repo
+      # ✅ Step 8: Commit and push Creator results safely
       - name: Commit and push Creator results
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add Creator/tempmail_accounts.json
-          git commit -m "Update Creator results [auto]" || echo "No changes to commit"
-          git push origin HEAD:${{ github.ref }}
 
-      # Step 9: Install dependencies in engine folder
+          # Detect branch dynamically
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          echo "Working on branch: $BRANCH_NAME"
+
+          # Sync with remote before pushing
+          git fetch origin $BRANCH_NAME
+          git pull --rebase origin $BRANCH_NAME || true
+
+          # Add updated files
+          git add Creator/tempmail_accounts.json
+
+          # Commit changes if any
+          git commit -m "Update Creator results [auto]" || echo "No changes to commit"
+
+          # Push safely
+          git push --force-with-lease origin $BRANCH_NAME
+
+      # Step 9: Install dependencies in Engine folder
       - name: Install Engine dependencies
         working-directory: engine
         run: |
@@ -73,25 +92,33 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install requests
 
-      # Step 10: Run runner.js with Xvfb inside engine
+      # Step 10: Run Engine runner.js with Xvfb
       - name: Run Engine runner.js with Xvfb
         working-directory: engine
         run: |
           xvfb-run -a node runner.js
 
-      # ✅ Step 11: Commit and push Engine results (including new JSONs)
+      # ✅ Step 11: Commit and push Engine results safely
       - name: Commit and push Engine results
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Add all expected output files
+
+          # Detect current branch dynamically
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          echo "Working on branch: $BRANCH_NAME"
+
+          # Ensure we're synced with latest remote state
+          git fetch origin $BRANCH_NAME
+          git pull --rebase origin $BRANCH_NAME || true
+
+          # Add generated Engine output files
           git add engine/tempmail.json \
                   engine/tempmail_1.json \
                   engine/tempmail_2.json \
                   engine/tempmail_3.json \
                   engine/*.png
-          
-          # Commit changes if any
+
+          # Commit and push updates
           git commit -m "Update Engine results [auto]" || echo "No changes to commit"
-          git push origin HEAD:${{ github.ref }}
+          git push --force-with-lease origin $BRANCH_NAME
