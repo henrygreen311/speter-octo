@@ -5,7 +5,7 @@ on:
     - cron: '0 */1 * * *'   # Every 2 hours
   workflow_dispatch:         # Manual trigger
 
-# ✅ Allow concurrent runs between different workflows
+#  Allow concurrent runs between different workflows
 # Each workflow uses its own group name derived from the workflow and run ID
 concurrency:
   group: tester-${{ github.workflow }}-${{ github.run_id }}
@@ -60,7 +60,7 @@ jobs:
         working-directory: Creator
         run: xvfb-run -a node runner.js
 
-      # ✅ Step 8: Commit and push Creator results safely
+      #  Step 8: Commit and push Creator results safely
       - name: Commit and push Creator results
         run: |
           git config --global user.name "github-actions[bot]"
@@ -89,7 +89,7 @@ jobs:
         working-directory: engine
         run: xvfb-run -a node runner.js
 
-      # ✅ Step 11: Commit and push Engine results safely
+      #  Step 11: Commit and push Engine results safely
       - name: Commit and push Engine results
         run: |
           git config --global user.name "github-actions[bot]"
